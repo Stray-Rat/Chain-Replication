@@ -1,0 +1,28 @@
+//property of Benjamin Reed SJSU
+syntax = "proto3";
+option java_multiple_files = true;
+option java_package = "edu.sjsu.cs249.chain";
+
+import "chain.proto";
+
+package chain;
+
+service ChainDebug {
+    rpc debug(ChainDebugRequest) returns (ChainDebugResponse);
+    rpc exit(ExitRequest) returns (ExitResponse);
+}
+
+message ChainDebugRequest {
+}
+
+message ChainDebugResponse {
+    map<string, uint32> state = 1;
+    // the last xid processed in the state
+    uint32 xid = 2;
+    // updates that have not been processed
+    repeated UpdateRequest sent = 3;
+    repeated string logs = 4;
+}
+
+message ExitRequest {}
+message ExitResponse {}

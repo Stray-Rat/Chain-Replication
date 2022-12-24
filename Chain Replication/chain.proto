@@ -1,0 +1,79 @@
+//Property of Benjamin Reed SJSU
+syntax = "proto3";
+option java_multiple_files = true;
+option java_package = "edu.sjsu.cs249.chain";
+
+package chain;
+
+service HeadChainReplica {
+   // increment the given key by the value, if the key doesn't exist it will
+   // be created with the given value.
+   rpc increment(IncRequest) returns (HeadResponse);
+}
+
+
+message IncRequest {
+   string key = 1;
+   // if the key does not exist, it will be created with this value, otherwise the value
+   // if the existing key will be incremented by this value
+   int32 incValue = 2;
+}
+
+message HeadResponse {
+   // rc = 0 means success, rc = 1 i'm not the head
+   uint32 rc = 1;
+}
+
+service TailChainReplica {
+    // gets the current value of a key or 0 if the key does not exist
+    rpc get(GetRequest) returns (GetResponse);
+}
+
+message GetRequest {
+    string key = 1;
+}
+
+message GetResponse {
+   // rc = 0 means success, rc = 1 i'm not the tail
+    uint32 rc = 1;
+    int32 value = 2;
+}
+
+service Replica {
+    // recieve an update (called by predecessor)
+    rpc update(UpdateRequest) returns (UpdateResponse);
+    // does a state transfer (called by predecessor)
+    rpc stateTransfer(StateTransferRequest) returns (StateTransferResponse);
+    // ACKs an update (removes it from the sent list) (called by successor)
+    rpc ack(AckRequest) returns (AckResponse);
+}
+
+message UpdateRequest {
+    string key = 1;
+    // NOTE: this is the new calculated value. the head executes the increment
+    int32 newValue = 2;
+    uint32 xid = 3;
+}
+message UpdateResponse {
+    // rc = 0 means success, rc = 1 i'm a new tail (i need a state transfer)
+    // rc = 1 should only happen on the first update to a new sucessor
+    uint32 rc = 1;
+}
+message StateTransferRequest {
+    map<string, uint32> state = 1;
+    // the last xid processed in the state
+    uint32 xid = 2;
+    // updates that have not been processed
+    repeated UpdateRequest sent = 3;
+}
+message StateTransferResponse {
+    // rc = 0 means success, rc = 1 i'm not a new tail
+    uint32 rc = 1;
+}
+
+message AckRequest {
+    // the last ack that has been seen
+    uint32 xid = 1;
+}
+message AckResponse {
+}
